@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f7fb;
+  color: #111827;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.app-header h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.app-subtitle {
+  margin: 0;
+  color: #4b5563;
+}
+
+.image-label {
+  margin: 6px 0 0;
+  color: #334155;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  font-weight: 600;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.toolbar button {
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.toolbar button:hover {
+  background: #1d4ed8;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.8fr);
+  gap: 20px;
+}
+
+.viewer-wrapper,
+.annotation-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.05);
+}
+
+.viewer-wrapper {
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-box {
+  flex: 1;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  min-height: 520px;
+}
+
+.viewer-status {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.75);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.cornerstone-element {
+  width: 100%;
+  height: 100%;
+}
+
+.annotation-marker {
+  position: absolute;
+  width: auto;
+  min-width: 120px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.95);
+  color: white;
+  border-radius: 999px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  font-size: 0.85rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+}
+
+.annotation-marker span {
+  display: block;
+}
+
+.annotation-panel h3 {
+  margin-top: 0;
+}
+
+.panel-description {
+  margin: 0 0 16px;
+  color: #475569;
+}
+
+.annotation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.annotation-list li {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+  background: #f8fafc;
+}
+
+.annotation-list strong {
+  display: block;
+  margin-bottom: 4px;
+}
