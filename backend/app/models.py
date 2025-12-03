@@ -1,10 +1,3 @@
-"""Placeholder for SQLAlchemy models.
-
-This project starts with a simple in-memory annotations list in `main.py`.
-If you want persistent storage, define SQLAlchemy models here and wire them
-into `database.py` and the API routes.
-"""
-
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 

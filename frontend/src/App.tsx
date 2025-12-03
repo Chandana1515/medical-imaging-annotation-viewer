@@ -13,14 +13,20 @@ interface Annotation {
   y: number
 }
 
+type ZoomAction = 'none' | 'in' | 'out' | 'reset'
+
 function App() {
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [status, setStatus] = useState('Ready to load a DICOM file')
-  const DEMO_IMAGE_URL = 'https://placekitten.com/640/480'
-  const DEMO_IMAGE_ID = `demo:${DEMO_IMAGE_URL}`
+  const DEMO_IMAGE_ID = 'demo:sample'
+  const MRI_IMAGE_ID = 'demo:mri'
   const [currentImageId, setCurrentImageId] = useState<string>('')
   const [currentImageLabel, setCurrentImageLabel] = useState('No image loaded')
   const [reloadToken, setReloadToken] = useState(0)
+  const [zoomAction, setZoomAction] = useState<{ action: ZoomAction; token: number }>({
+    action: 'none',
+    token: 0,
+  })
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -87,6 +93,13 @@ function App() {
     setStatus('Loading demo image...')
   }
 
+  const loadMriDemo = () => {
+    setCurrentImageId(MRI_IMAGE_ID)
+    setCurrentImageLabel('MRI demo image')
+    setReloadToken((value) => value + 1)
+    setStatus('Loading MRI demo image...')
+  }
+
   const triggerFileInput = () => {
     inputRef.current?.click()
   }
@@ -105,6 +118,18 @@ function App() {
     event.target.value = ''
   }
 
+  const handleZoomIn = () => {
+    setZoomAction({ action: 'in', token: Date.now() })
+  }
+
+  const handleZoomOut = () => {
+    setZoomAction({ action: 'out', token: Date.now() })
+  }
+
+  const handleResetZoom = () => {
+    setZoomAction({ action: 'reset', token: Date.now() })
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -120,7 +145,11 @@ function App() {
 
       <Toolbar
         onLoadDemo={loadDemo}
+        onLoadMriDemo={loadMriDemo}
         onLoadDicomFile={triggerFileInput}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onResetZoom={handleResetZoom}
       />
       <input
         ref={inputRef}
@@ -136,6 +165,7 @@ function App() {
             imageId={currentImageId}
             annotations={annotations}
             triggerReload={reloadToken}
+            zoomAction={zoomAction}
             onStatusChange={setStatus}
             onAddAnnotation={addAnnotation}
           />

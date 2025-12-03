@@ -8,46 +8,119 @@ interface Annotation {
   y: number
 }
 
+interface ZoomAction {
+  action: 'none' | 'in' | 'out' | 'reset'
+  token: number
+}
+
 interface ViewerProps {
   imageId: string
   annotations: Annotation[]
   triggerReload: number
+  zoomAction: ZoomAction
   onStatusChange: (message: string) => void
   onAddAnnotation: (x: number, y: number) => void
 }
 
-const demoImageUrl = 'https://placekitten.com/640/480'
 let dicomLoaderRegistered = false
 let demoLoaderRegistered = false
 const demoImageMetadata = new Map<string, Record<string, any>>()
 
-const createDemoImageLoader = async (imageId: string) => {
-  const imageUrl = imageId.replace('demo:', '')
-  const response = await fetch(imageUrl)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch demo image: ${response.status}`)
+const drawMriPattern = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  ctx.fillStyle = '#0d1220'
+  ctx.fillRect(0, 0, width, height)
+
+  const gradient = ctx.createRadialGradient(
+    width * 0.5,
+    height * 0.45,
+    width * 0.05,
+    width * 0.5,
+    height * 0.45,
+    width * 0.7
+  )
+  gradient.addColorStop(0, '#65708f')
+  gradient.addColorStop(0.6, '#2c3b5c')
+  gradient.addColorStop(1, '#101426')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, width, height)
+
+  ctx.fillStyle = 'rgba(230,230,255,0.12)'
+  ctx.beginPath()
+  ctx.ellipse(width * 0.5, height * 0.5, width * 0.4, height * 0.55, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+  ctx.lineWidth = 3
+  for (let i = 0; i < 12; i += 1) {
+    const radius = width * (0.25 + i * 0.03)
+    ctx.beginPath()
+    ctx.ellipse(width * 0.5, height * 0.5, radius, radius * 0.7, 0, 0, Math.PI * 2)
+    ctx.stroke()
   }
 
-  const blob = await response.blob()
-  const bitmap = await createImageBitmap(blob)
+  ctx.fillStyle = 'rgba(255,255,255,0.14)'
+  for (let i = 0; i < 6; i += 1) {
+    const x = width * (0.35 + i * 0.06)
+    const y = height * (0.35 + Math.sin(i * 1.1) * 0.04)
+    ctx.beginPath()
+    ctx.ellipse(x, y, width * 0.08, height * 0.03, Math.PI * 0.2, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.18)'
+  ctx.font = 'bold 22px Inter, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('MRI Demo', width * 0.5, height * 0.14)
+}
+
+const drawColorDemo = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const gradient = ctx.createLinearGradient(0, 0, width, height)
+  gradient.addColorStop(0, '#0f172a')
+  gradient.addColorStop(0.5, '#2563eb')
+  gradient.addColorStop(1, '#93c5fd')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, width, height)
+
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.font = 'bold 36px Inter, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('Demo Image', width / 2, height / 2 - 12)
+  ctx.font = '18px Inter, sans-serif'
+  ctx.fillText('Cornerstone viewer sample', width / 2, height / 2 + 30)
+}
+
+const createDemoImageLoader = async (imageId: string) => {
+  const width = 640
+  const height = 480
   const canvas = document.createElement('canvas')
-  canvas.width = bitmap.width
-  canvas.height = bitmap.height
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) {
     throw new Error('Unable to get canvas rendering context')
   }
 
-  ctx.drawImage(bitmap, 0, 0)
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const pixelData = new Uint8Array(imageData.data.buffer)
+  if (imageId.includes('mri')) {
+    drawMriPattern(ctx, width, height)
+  } else {
+    drawColorDemo(ctx, width, height)
+  }
+
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const rgbaData = imageData.data
+  const pixelData = new Uint8Array(width * height * 3)
+
+  for (let i = 0; i < width * height; i++) {
+    pixelData[i * 3] = rgbaData[i * 4]
+    pixelData[i * 3 + 1] = rgbaData[i * 4 + 1]
+    pixelData[i * 3 + 2] = rgbaData[i * 4 + 2]
+  }
 
   const metadata = {
     imagePlaneModule: {
-      rows: canvas.height,
-      columns: canvas.width,
-      columnPixelSpacing: 1,
-      rowPixelSpacing: 1,
+      rows: height,
+      columns: width,
+      pixelSpacing: [1, 1],
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
       imagePositionPatient: [0, 0, 0],
       frameOfReferenceUID: 'demo',
@@ -57,7 +130,7 @@ const createDemoImageLoader = async (imageId: string) => {
       bitsStored: 8,
       highBit: 7,
       photometricInterpretation: 'RGB',
-      samplesPerPixel: 4,
+      samplesPerPixel: 3,
       pixelRepresentation: 0,
       planarConfiguration: 0,
     },
@@ -78,13 +151,13 @@ const createDemoImageLoader = async (imageId: string) => {
     voiLUTFunction: 'LINEAR',
     getPixelData: () => pixelData,
     getCanvas: () => canvas,
-    rows: canvas.height,
-    columns: canvas.width,
-    height: canvas.height,
-    width: canvas.width,
+    rows: height,
+    columns: width,
+    height,
+    width,
     color: true,
-    rgba: true,
-    numComps: 4,
+    rgba: false,
+    numComps: 3,
     columnPixelSpacing: 1,
     rowPixelSpacing: 1,
     invert: false,
@@ -148,11 +221,13 @@ const Viewer = ({
   imageId,
   annotations,
   triggerReload,
+  zoomAction,
   onStatusChange,
   onAddAnnotation,
 }: ViewerProps) => {
   const elementRef = useRef<HTMLDivElement>(null)
   const renderingEngineRef = useRef<any>(null)
+  const viewportRef = useRef<any>(null)
 
   useEffect(() => {
     const loadImage = async () => {
@@ -160,7 +235,7 @@ const Viewer = ({
         return
       }
 
-      const loadId = imageId || `demo:${demoImageUrl}`
+      const loadId = imageId || 'demo:sample'
       registerDemoLoader()
 
       if (loadId.startsWith('wadouri:') || loadId.startsWith('dicomweb:')) {
@@ -194,10 +269,12 @@ const Viewer = ({
 
       try {
         await viewport.setStack([loadId])
+        viewportRef.current = viewport
         if (typeof viewport.render === 'function') {
           viewport.render()
         }
-        onStatusChange(imageId ? 'DICOM image loaded' : 'Demo image loaded')
+        const isDemo = loadId.startsWith('demo:')
+        onStatusChange(isDemo ? 'Demo image loaded' : 'DICOM image loaded')
       } catch (error) {
         console.error(error)
         onStatusChange(
@@ -211,6 +288,40 @@ const Viewer = ({
     loadImage()
   }, [imageId, triggerReload, onStatusChange])
 
+  useEffect(() => {
+    if (!viewportRef.current || zoomAction.action === 'none') {
+      return
+    }
+
+    const viewport = viewportRef.current
+    const currentZoom = viewport.getZoom()
+    if (zoomAction.action === 'reset') {
+      viewport.resetCamera(false, true)
+    } else {
+      const factor = zoomAction.action === 'in' ? 1.2 : 1 / 1.2
+      viewport.setZoom(Math.max(0.1, currentZoom * factor), true)
+    }
+
+    if (typeof viewport.render === 'function') {
+      viewport.render()
+    }
+  }, [zoomAction])
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    if (!viewportRef.current) {
+      return
+    }
+
+    const viewport = viewportRef.current
+    const currentZoom = viewport.getZoom()
+    const scale = event.deltaY < 0 ? 1.1 : 0.9
+    viewport.setZoom(Math.max(0.1, currentZoom * scale), true)
+    if (typeof viewport.render === 'function') {
+      viewport.render()
+    }
+  }
+
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
     const x = Math.round(event.clientX - rect.left)
@@ -219,7 +330,7 @@ const Viewer = ({
   }
 
   return (
-    <div className="viewer-box" onClick={handleClick}>
+    <div className="viewer-box" onClick={handleClick} onWheel={handleWheel}>
       <div className="viewer-status">Click inside viewer to add annotation</div>
       <div ref={elementRef} className="cornerstone-element" />
       {annotations.map((annotation) => (
