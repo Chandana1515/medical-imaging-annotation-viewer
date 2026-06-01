@@ -2,7 +2,7 @@
 
 A lightweight medical imaging annotation demo using React, Cornerstone.js, FastAPI, and SQLAlchemy.
 
-![Medical Imaging Annotation Viewer screenshot]("C:\Users\Chandhu\Downloads\Screenshot 2026-06-01 181548.png")
+<img width="1003" height="648" alt="Screenshot 2026-06-01 181548" src="https://github.com/user-attachments/assets/9da27b21-4bf6-47bf-8925-a964b2d68b35" />
 
 ## Overview
 
